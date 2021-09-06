@@ -1,62 +1,108 @@
-import {useState, useRef} from 'react'
+import {useState } from 'react'
 import Operators from './components/operators';
 import LeftPannel from './components/leftPannel';
 import './App.css';
 
 function App() {
-  let [expression, setExpression] = useState('')
-  let [cancel, setCansel] = useState(false)
+  let [expression, setExpression] = useState({
+    value: null,
+    displayValue: '',
+    operator: null,
+    AfterEqual: true,
+    valueDigit: '',
+  });
   
-
-  const getResult = () => {
-    let result = 0;
-    const variables = expression.match(/\d+(\.\d+)?/g)
-    const operator = expression.match(/[-*+/]/)
-    console.log(operator[0]);
-    switch (operator[0]) {
-      case '+':
-        result = Number(variables[0]) + Number(variables[1]);
-        break;
-      case '-':
-        result = Number(variables[0]) - Number(variables[1]);
-        break;
-      case '/':
-        console.log(Number(variables[0]));
-        result = Number(variables[0]) / Number(variables[1]);
-        break
-      case '*':
-        result = Number(variables[0]) * Number(variables[1]);
-        break;
+  const inputDigit = (inputValue) => {
+    if (
+      (expression.valueDigit.length === 0 && inputValue === '.') ||
+      (expression.valueDigit.includes('.') && inputValue === '.')
+    ) {
+      inputValue = '';
     }
-    setExpression(String(result))
-    setCansel(true)
-    
-  }
-
-  const calculateExpression = (e)=> {
-    if (cancel) {
-      console.log('hjjkhjk')
-      setExpression("67")
-    }
-    const {target} = e
-    if (target.innerText === "AC") {
-      setExpression('')
+    if (inputValue === 'AC') {
+      setExpression({
+        value: null,
+        displayValue: '',
+        operator: null,
+        AfterEqual: true,
+        valueDigit: '',
+      });
     }else{
-    setExpression(expression + target.innerText)
-    }
+      if (expression.AfterEqual){
+        setExpression({...expression, displayValue: expression.displayValue + inputValue, valueDigit: expression.valueDigit + inputValue})
+      }else{
+        setExpression({
+          ...expression,
+          displayValue: inputValue,
+          valueDigit: inputValue,
+          AfterEqual: true,
+          value: null,
+        });
+      }
   }
+  }
+const inputOperator = (operator_input) => {
+  if ((/[0-9]/).test(expression.displayValue.slice(-1))){
+      if (expression.value === null) {
+        expression.value = Number(expression.valueDigit);
+      }else{
+        identifyOfOperator(expression.operator)
+      }
+      expression.operator = operator_input;
+      expression.valueDigit = ''
+      setExpression({
+        ...expression,
+        displayValue: expression.displayValue + expression.operator,
+        AfterEqual: true,
+      });
+  }else{
+    expression.displayValue = expression.displayValue.slice(0,-1) + operator_input
+    expression.operator = operator_input;
+    setExpression({...expression})
 
-  const operator = (e) =>{
-    const { target } = e;
-    setExpression(expression + target.innerText);
   }
+}
+
+const equal = () => {
+  identifyOfOperator(expression.operator)
+  expression.operator = null
+  setExpression({
+    ...expression,
+    displayValue: String(expression.value),
+    AfterEqual: false,
+    valueDigit: '',
+  });
+  expression.displayValue = ''
+}
+
+
+const identifyOfOperator = (oper) => {
+  switch (oper) {
+    case '+':
+      expression.value = expression.value + Number(expression.valueDigit);
+      break;
+    case '-':
+      expression.value = expression.value - Number(expression.valueDigit);
+      break;
+    case '/':
+      expression.value = expression.value / Number(expression.valueDigit);
+      break;
+    case '*':
+      expression.value = expression.value * Number(expression.valueDigit);
+      break;
+  }
+}
+
+
   return (
     <div className="calculator">
-      <div className="input">{expression !== '' ? expression : 0}</div>
+      <div className="input">
+        {expression.displayValue !== '' ? expression.displayValue : 0}
+      </div>
       <div className="buttons"></div>
-      <Operators onCalculate={operator}></Operators>
-      <LeftPannel onCalculate={calculateExpression}></LeftPannel>
-      <div className="equal" onClick={getResult}>
+      <Operators onCalculate={(e) => e.target.className === ''  ? inputOperator(e.target.innerText) : null}></Operators>
+      <LeftPannel onCalculate={(e) => e.target.className === '' ? inputDigit(e.target.innerText)  : null }></LeftPannel>
+      <div className="equal" onClick={equal}>
         =
       </div>
     </div>
